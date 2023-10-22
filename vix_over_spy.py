@@ -5,10 +5,10 @@ import requests
 
 # User-configurable settings
 # ==========================
-# Define the VIX percentile threshold for the blue dot strategy
-VIX_THRESHOLD = 50  # Values below this percentile are considered for blue dot
+# Define the VIX percentile threshold for the Long strategy
+VIX_THRESHOLD = 50  # Values below this percentile are considered for Long
 # Define the lookback period for VIX percentile calculation
-LOOKBACK_DAYS = 50
+LOOKBACK_DAYS = 20
 # ==========================
 
 # Load API keys from JSON file
@@ -67,7 +67,7 @@ blue_dot_data = blue_dot_data[
     & (blue_dot_data["Daily Returns"] > -threshold)
 ]
 
-# Calculate cumulative returns for the blue dot strategy
+# Calculate cumulative returns for the Long strategy
 cumulative_blue_dot_returns = (blue_dot_data["Daily Returns"] + 1).cumprod() - 1
 blue_dot_return = cumulative_blue_dot_returns.iloc[-1] * 100
 
@@ -115,8 +115,6 @@ plt.xlabel("Date")
 plt.ylabel("S&P 500 Price")
 plt.grid(True)
 
-# ... rest of your code ...
-
 
 # Add Annotations for P/L
 plt.annotate(
@@ -127,7 +125,7 @@ plt.annotate(
     color="green",
 )
 plt.annotate(
-    f"Blue Dots Only P/L: {blue_dot_return:.2f}%",
+    f"Long Position P/L: {blue_dot_return:.2f}%",
     (0.02, 0.90),
     xycoords="axes fraction",
     fontsize=10,
@@ -148,7 +146,7 @@ plt.plot(
     markersize=1,
 )
 
-# Annotate P/L for Blue Dot Strategy
+# Annotate P/L for Long Strategy
 plt.annotate(
     f"Final P/L: {blue_dot_return:.2f}%",
     (0.05, 0.95),
@@ -157,7 +155,7 @@ plt.annotate(
     color="blue",
 )
 
-plt.title("S&P 500 Blue Dot Strategy Cumulative P/L")
+plt.title("S&P 500 Long Strategy Cumulative P/L")
 plt.xlabel("Trading Days")
 plt.ylabel("P/L (%)")
 plt.grid(True)
