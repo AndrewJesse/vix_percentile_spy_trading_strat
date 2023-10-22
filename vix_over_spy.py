@@ -3,6 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import requests
 
+# User-configurable settings
+# ==========================
+# Define the VIX percentile threshold for the blue dot strategy
+VIX_THRESHOLD = 50  # Values below this percentile are considered for blue dot
+# Define the lookback period for VIX percentile calculation
+LOOKBACK_DAYS = 50
+# ==========================
+
 # Load API keys from JSON file
 with open("config.json", "r") as file:
     config = json.load(file)
@@ -21,15 +29,25 @@ def fetch_fred_data(series_id, api_key):
     return df
 
 
-# Fetch VIX and S&P 500 data from FRED
+## Fetch VIX and S&P 500 data from FRED
 vix_data = fetch_fred_data("VIXCLS", fred_api_key)
 sp500_data = fetch_fred_data("SP500", fred_api_key)
 
-# Calculate the percentile of each day's VIX value over the entire dataset
+# Calculate the overall percentile of each day's VIX value over the dataset
 vix_data["Percentile"] = vix_data["value"].rank(pct=True) * 100
 
+# Calculate the rolling percentile of each day's VIX value over a 20-day lookback period
+vix_data["Rolling Percentile"] = (
+    vix_data["value"]
+    .rolling(window=LOOKBACK_DAYS)
+    .apply(lambda x: pd.Series(x).rank(pct=True).iloc[-1] * 100)
+)
+# Fill the NaN values in the "Rolling Percentile" column with the overall VIX percentile
+vix_data["Rolling Percentile"].fillna(vix_data["Percentile"], inplace=True)
+
+
 # Align the two datasets on their dates
-aligned_data = pd.concat([sp500_data, vix_data["Percentile"]], axis=1).dropna()
+aligned_data = pd.concat([sp500_data, vix_data["Rolling Percentile"]], axis=1).dropna()
 
 # Calculate Buy and Hold P/L
 buy_and_hold_return = (
@@ -38,8 +56,8 @@ buy_and_hold_return = (
     * 100
 )
 
-# Filter out data where VIX is below 50%
-blue_dot_data = aligned_data[aligned_data["Percentile"] < 50].copy()
+# Filter out data where VIX is below the VIX_THRESHOLD
+blue_dot_data = aligned_data[aligned_data["Rolling Percentile"] < VIX_THRESHOLD].copy()
 
 # Calculate daily returns and filter out extreme outliers
 blue_dot_data["Daily Returns"] = blue_dot_data["value"].pct_change()
@@ -55,14 +73,50 @@ blue_dot_return = cumulative_blue_dot_returns.iloc[-1] * 100
 
 # First Plot
 plt.figure(figsize=(14, 7))
-for date, row in aligned_data.iterrows():
-    color = "red" if row["Percentile"] > 50 else "blue"
-    plt.plot([date], [row["value"]], marker="o", markersize=1, color=color)
+
+# Plot the entire S&P 500 data as red lines
+plt.plot(
+    aligned_data.index,
+    aligned_data["value"],
+    linestyle="-",
+    color="red",
+)
+
+# Filter out sequences where VIX is below the threshold and overlay them with blue lines
+is_below_threshold = aligned_data["Rolling Percentile"] < VIX_THRESHOLD
+start_date = None
+for date, below in is_below_threshold.items():
+    if below and start_date is None:
+        start_date = date
+    elif not below and start_date:
+        plt.plot(
+            aligned_data[start_date:date].index,
+            aligned_data[start_date:date]["value"],
+            marker="o",
+            markersize=1,
+            color="blue",
+            linestyle="-",
+        )
+        start_date = None
+
+# To handle the case where the last sequence goes till the end of the dataset
+if start_date:
+    plt.plot(
+        aligned_data[start_date:].index,
+        aligned_data[start_date:]["value"],
+        marker="o",
+        markersize=1,
+        color="blue",
+        linestyle="-",
+    )
 
 plt.title("S&P 500 with Color Change based on VIX Percentile")
 plt.xlabel("Date")
 plt.ylabel("S&P 500 Price")
 plt.grid(True)
+
+# ... rest of your code ...
+
 
 # Add Annotations for P/L
 plt.annotate(
