@@ -38,18 +38,22 @@ buy_and_hold_return = (
     * 100
 )
 
-# Calculate Blue Dots P/L
-aligned_data["Daily Returns"] = aligned_data["value"].pct_change()
-aligned_data["Blue Dot Returns"] = aligned_data["Daily Returns"].where(
-    aligned_data["Percentile"] < 50
-)
-cumulative_blue_dot_returns = (
-    (aligned_data["Blue Dot Returns"] + 1).cumprod().dropna()
-)  # Drop nan values
-blue_dot_return = (cumulative_blue_dot_returns.iloc[-1] - 1) * 100
+# Filter out data where VIX is below 50%
+blue_dot_data = aligned_data[aligned_data["Percentile"] < 50].copy()
 
+# Calculate daily returns and filter out extreme outliers
+blue_dot_data["Daily Returns"] = blue_dot_data["value"].pct_change()
+threshold = 3 * blue_dot_data["Daily Returns"].std()
+blue_dot_data = blue_dot_data[
+    (blue_dot_data["Daily Returns"] < threshold)
+    & (blue_dot_data["Daily Returns"] > -threshold)
+]
 
-# Plotting S&P 500 with color change based on VIX percentile
+# Calculate cumulative returns for the blue dot strategy
+cumulative_blue_dot_returns = (blue_dot_data["Daily Returns"] + 1).cumprod() - 1
+blue_dot_return = cumulative_blue_dot_returns.iloc[-1] * 100
+
+# First Plot
 plt.figure(figsize=(14, 7))
 for date, row in aligned_data.iterrows():
     color = "red" if row["Percentile"] > 50 else "blue"
@@ -78,29 +82,13 @@ plt.annotate(
 
 plt.tight_layout()
 plt.show()
-# --------------------------#
-# Filter out data where VIX is below 50%
-blue_dot_data = aligned_data[aligned_data["Percentile"] < 50].copy()
 
-# Calculate daily returns and then filter out any extreme outliers
-blue_dot_data["Daily Returns"] = blue_dot_data["value"].pct_change()
-threshold = 3 * blue_dot_data["Daily Returns"].std()
-blue_dot_data = blue_dot_data[
-    (blue_dot_data["Daily Returns"] < threshold)
-    & (blue_dot_data["Daily Returns"] > -threshold)
-]
-
-# Calculate cumulative returns for the blue dot strategy
-cumulative_blue_dot_returns = (
-    (blue_dot_data["Daily Returns"] + 1).cumprod() - 1
-) * 100  # Convert to percentage
-blue_dot_return = cumulative_blue_dot_returns.iloc[-1]
-
+# Second Plot
 plt.figure(figsize=(14, 7))
 # Plotting against a continuous range for the x-axis
 plt.plot(
     range(len(blue_dot_data)),
-    cumulative_blue_dot_returns,
+    cumulative_blue_dot_returns * 100,  # Convert to percentage
     color="blue",
     marker="o",
     markersize=1,
