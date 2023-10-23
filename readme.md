@@ -30,7 +30,7 @@ Before you run the project, you need to:
 
 1. **Clone the Repository**: 
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/AndrewJesse/vix_percentile_spy_trading_strat
    ```
    
 2. **API Keys Setup**:
@@ -65,5 +65,8 @@ Feel free to fork the project and submit pull requests. All contributions are we
 This project is licensed under the MIT License.
 
 ---
+## The blue lines represent the long position is on
+![Results of Trade Strat](https://github.com/AndrewJesse/vix_percentile_spy_trading_strat/assets/53543737/424787a4-0689-4723-b68a-1a93fb21d6d4)
 
-You can copy the above content and save it to a `README.md` file in the root directory of your GitHub repository. Make sure to replace `<repository_url>` with your actual GitHub repository URL.
+## The P/L from the strategy
+![results of strat](https://github.com/AndrewJesse/vix_percentile_spy_trading_strat/assets/53543737/411c8a3c-3889-4f00-b39d-bc297db24659)
