@@ -148,7 +148,7 @@ plt.plot(
 
 # Annotate P/L for Long Strategy
 plt.annotate(
-    f"Final P/L: {blue_dot_return:.2f}%",
+    f"Total Running P/L: {blue_dot_return:.2f}%",
     (0.05, 0.95),
     xycoords="axes fraction",
     fontsize=10,
@@ -156,7 +156,7 @@ plt.annotate(
 )
 
 plt.title("S&P 500 Long Strategy Cumulative P/L")
-plt.xlabel("Trading Days")
+plt.xlabel("# of trading days with long position on")
 plt.ylabel("P/L (%)")
 plt.grid(True)
 plt.tight_layout()
